@@ -1,0 +1,1554 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gambiarra Arena - Browser Client</title>
+  <style>
+    /* ============ CSS RESET & VARIABLES ============ */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-primary: #0f0f1a;
+      --bg-secondary: #1a1a2e;
+      --bg-tertiary: #252540;
+      --bg-input: #16213e;
+      --text-primary: #e8e8e8;
+      --text-secondary: #b0b0b0;
+      --text-muted: #666;
+      --accent-primary: #6366f1;
+      --accent-success: #22c55e;
+      --accent-warning: #f59e0b;
+      --accent-error: #ef4444;
+      --accent-info: #3b82f6;
+      --border-color: #333;
+      --border-radius: 8px;
+      --transition: 0.2s ease;
+      --font-mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    }
+
+    /* ============ BASE STYLES ============ */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ============ LAYOUT ============ */
+    header {
+      background: var(--bg-secondary);
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    header h1::before {
+      content: '';
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-info));
+      border-radius: 4px;
+    }
+
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* ============ STATUS BADGE ============ */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      background: var(--bg-tertiary);
+    }
+
+    .status-badge::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .status-disconnected { color: var(--text-muted); }
+    .status-connecting { color: var(--accent-warning); }
+    .status-connected { color: var(--accent-success); }
+    .status-generating {
+      color: var(--accent-info);
+    }
+    .status-generating::before {
+      animation: pulse 1s infinite;
+    }
+    .status-error { color: var(--accent-error); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ============ ERROR CONTAINER ============ */
+    #error-container {
+      position: fixed;
+      top: 80px;
+      right: 1rem;
+      max-width: 400px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .alert {
+      padding: 1rem;
+      border-radius: var(--border-radius);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .alert-error {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid var(--accent-error);
+      color: #fca5a5;
+    }
+
+    .alert-warning {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid var(--accent-warning);
+      color: #fcd34d;
+    }
+
+    .alert-success {
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid var(--accent-success);
+      color: #86efac;
+    }
+
+    .alert button {
+      background: none;
+      border: none;
+      color: inherit;
+      cursor: pointer;
+      font-size: 1.25rem;
+      line-height: 1;
+      opacity: 0.7;
+    }
+
+    .alert button:hover {
+      opacity: 1;
+    }
+
+    /* ============ SECTIONS ============ */
+    section {
+      background: var(--bg-secondary);
+      border-radius: var(--border-radius);
+      border: 1px solid var(--border-color);
+    }
+
+    /* ============ CONFIG PANEL ============ */
+    #config-panel {
+      padding: 1.5rem;
+    }
+
+    .config-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 600px) {
+      .config-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    fieldset {
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      padding: 1rem;
+    }
+
+    legend {
+      padding: 0 0.5rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.25rem;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 0.75rem;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      color: var(--text-primary);
+      font-size: 0.9375rem;
+      transition: border-color var(--transition);
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+    }
+
+    input::placeholder {
+      color: var(--text-muted);
+    }
+
+    select {
+      cursor: pointer;
+    }
+
+    /* ============ ACTIONS ============ */
+    #actions {
+      margin-top: 1.5rem;
+      display: flex;
+      gap: 1rem;
+    }
+
+    button {
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--border-radius);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--accent-primary);
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #5558e3;
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-input);
+    }
+
+    .btn-danger {
+      background: var(--accent-error);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+
+    /* ============ STATUS PANEL ============ */
+    #status-panel {
+      padding: 1rem 1.5rem;
+      display: none;
+    }
+
+    #status-panel.visible {
+      display: block;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+    }
+
+    .status-item {
+      text-align: center;
+      padding: 1rem;
+      background: var(--bg-tertiary);
+      border-radius: var(--border-radius);
+    }
+
+    .status-item .value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent-info);
+      font-family: var(--font-mono);
+    }
+
+    .status-item .label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-top: 0.25rem;
+    }
+
+    /* ============ ROUND INFO ============ */
+    #round-info {
+      margin-bottom: 1rem;
+      padding: 1rem;
+      background: var(--bg-tertiary);
+      border-radius: var(--border-radius);
+      display: none;
+    }
+
+    #round-info.visible {
+      display: block;
+    }
+
+    #round-info h3 {
+      font-size: 0.875rem;
+      color: var(--accent-warning);
+      margin-bottom: 0.5rem;
+    }
+
+    #round-info .prompt {
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      white-space: pre-wrap;
+      color: var(--text-secondary);
+      max-height: 100px;
+      overflow-y: auto;
+    }
+
+    /* ============ OUTPUT PANEL ============ */
+    #output-panel {
+      display: none;
+    }
+
+    #output-panel.visible {
+      display: block;
+    }
+
+    #output-panel h2 {
+      padding: 1rem 1.5rem;
+      font-size: 1rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #output-panel h2 .token-count {
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    #token-stream {
+      padding: 1.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.9375rem;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 200px;
+      max-height: 400px;
+      overflow-y: auto;
+      background: var(--bg-primary);
+    }
+
+    #token-stream:empty::before {
+      content: 'Aguardando desafio...';
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* ============ LOG PANEL ============ */
+    #log-panel {
+      background: var(--bg-secondary);
+      border-radius: var(--border-radius);
+      border: 1px solid var(--border-color);
+    }
+
+    #log-panel summary {
+      padding: 1rem 1.5rem;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--text-secondary);
+      user-select: none;
+    }
+
+    #log-panel summary:hover {
+      color: var(--text-primary);
+    }
+
+    #event-log {
+      padding: 1rem 1.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      line-height: 1.6;
+      max-height: 200px;
+      overflow-y: auto;
+      border-top: 1px solid var(--border-color);
+      color: var(--text-muted);
+    }
+
+    .log-entry {
+      margin-bottom: 0.25rem;
+    }
+
+    .log-time {
+      color: var(--text-muted);
+    }
+
+    .log-type-info { color: var(--accent-info); }
+    .log-type-success { color: var(--accent-success); }
+    .log-type-warning { color: var(--accent-warning); }
+    .log-type-error { color: var(--accent-error); }
+
+    /* ============ UTILITIES ============ */
+    .hidden {
+      display: none !important;
+    }
+
+    .loading {
+      position: relative;
+      pointer-events: none;
+    }
+
+    .loading::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Gambiarra Arena</h1>
+    <div id="connection-status" class="status-badge status-disconnected">
+      Desconectado
+    </div>
+  </header>
+
+  <div id="error-container"></div>
+
+  <main id="app">
+    <section id="config-panel">
+      <div class="config-grid">
+        <fieldset id="server-config">
+          <legend>Servidor Arena</legend>
+
+          <div class="form-group">
+            <label for="server-url">URL do Servidor</label>
+            <input type="text" id="server-url" placeholder="ws://localhost:3000/ws" value="ws://localhost:3000/ws">
+          </div>
+
+          <div class="form-group">
+            <label for="pin">PIN da Sessao</label>
+            <input type="text" id="pin" placeholder="123456" maxlength="6" pattern="[0-9]*" inputmode="numeric">
+          </div>
+
+          <div class="form-group">
+            <label for="participant-id">ID do Participante</label>
+            <input type="text" id="participant-id" placeholder="meu-pc">
+          </div>
+
+          <div class="form-group">
+            <label for="nickname">Apelido</label>
+            <input type="text" id="nickname" placeholder="Seu Nome">
+          </div>
+        </fieldset>
+
+        <fieldset id="llm-config">
+          <legend>LLM Local</legend>
+
+          <div class="form-group">
+            <label for="runner">Provedor</label>
+            <select id="runner">
+              <option value="ollama">Ollama</option>
+              <option value="lmstudio">LM Studio</option>
+              <option value="llamacpp">llama.cpp (em breve)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="llm-url">URL do LLM</label>
+            <input type="text" id="llm-url" placeholder="http://localhost:11434">
+          </div>
+
+          <div class="form-group">
+            <label for="model">Modelo</label>
+            <input type="text" id="model" placeholder="llama3.1:8b">
+          </div>
+        </fieldset>
+      </div>
+
+      <div id="actions">
+        <button id="btn-connect" class="btn-primary">Conectar</button>
+        <button id="btn-disconnect" class="btn-danger hidden">Desconectar</button>
+        <button id="btn-test-llm" class="btn-secondary">Testar LLM</button>
+      </div>
+    </section>
+
+    <section id="status-panel">
+      <div id="round-info">
+        <h3>Round <span id="round-number">-</span></h3>
+        <div class="prompt" id="current-prompt"></div>
+      </div>
+
+      <div class="status-grid">
+        <div class="status-item">
+          <div class="value" id="token-count">0</div>
+          <div class="label">Tokens</div>
+        </div>
+        <div class="status-item">
+          <div class="value" id="tokens-per-sec">0.0</div>
+          <div class="label">Tokens/s</div>
+        </div>
+        <div class="status-item">
+          <div class="value" id="first-token-time">-</div>
+          <div class="label">TTFT (ms)</div>
+        </div>
+        <div class="status-item">
+          <div class="value" id="duration">0.0</div>
+          <div class="label">Duracao (s)</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="output-panel">
+      <h2>
+        Resposta Gerada
+        <span class="token-count"><span id="output-token-count">0</span> tokens</span>
+      </h2>
+      <div id="token-stream"></div>
+    </section>
+
+    <details id="log-panel">
+      <summary>Log de Eventos</summary>
+      <pre id="event-log"></pre>
+    </details>
+  </main>
+
+  <script>
+    // ============ CONFIGURATION ============
+    const CONFIG = {
+      DEFAULT_SERVER_URL: 'ws://localhost:3000/ws',
+      RUNNERS: {
+        ollama: {
+          name: 'Ollama',
+          defaultUrl: 'http://localhost:11434',
+          testEndpoint: '/api/tags',
+          generateEndpoint: '/api/generate'
+        },
+        lmstudio: {
+          name: 'LM Studio',
+          defaultUrl: 'http://localhost:1234',
+          testEndpoint: '/v1/models',
+          generateEndpoint: '/v1/completions'
+        },
+        llamacpp: {
+          name: 'llama.cpp',
+          defaultUrl: 'http://localhost:8080',
+          testEndpoint: '/health',
+          generateEndpoint: '/completion'
+        }
+      },
+      RECONNECT_MAX_ATTEMPTS: 5,
+      RECONNECT_BASE_DELAY: 1000,
+      STORAGE_KEY: 'gambiarra-client-config'
+    };
+
+    // ============ STATE MANAGEMENT ============
+    const AppState = {
+      // Connection state
+      connectionStatus: 'disconnected', // disconnected | connecting | connected | generating | error
+      sessionId: null,
+
+      // Configuration
+      serverUrl: CONFIG.DEFAULT_SERVER_URL,
+      pin: '',
+      participantId: '',
+      nickname: '',
+      runner: 'ollama',
+      llmUrl: CONFIG.RUNNERS.ollama.defaultUrl,
+      model: 'llama3.1:8b',
+
+      // Round state
+      currentRound: null,
+      prompt: '',
+      maxTokens: 400,
+      temperature: 0.8,
+      deadlineMs: 90000,
+      seed: null,
+
+      // Generation metrics
+      tokenCount: 0,
+      tokensPerSecond: 0,
+      firstTokenLatency: null,
+      generationStartTime: null,
+      lastTokenTime: null,
+
+      // Output
+      generatedText: '',
+
+      // Listeners
+      _listeners: [],
+
+      subscribe(callback) {
+        this._listeners.push(callback);
+        return () => {
+          this._listeners = this._listeners.filter(l => l !== callback);
+        };
+      },
+
+      update(changes) {
+        Object.assign(this, changes);
+        this._listeners.forEach(cb => cb(changes));
+      },
+
+      save() {
+        const config = {
+          serverUrl: this.serverUrl,
+          pin: this.pin,
+          participantId: this.participantId,
+          nickname: this.nickname,
+          runner: this.runner,
+          llmUrl: this.llmUrl,
+          model: this.model
+        };
+        try {
+          localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(config));
+        } catch (e) {
+          console.warn('Failed to save config:', e);
+        }
+      },
+
+      load() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEY) || '{}');
+          Object.assign(this, saved);
+        } catch (e) {
+          console.warn('Failed to load config:', e);
+        }
+      },
+
+      reset() {
+        this.update({
+          currentRound: null,
+          prompt: '',
+          tokenCount: 0,
+          tokensPerSecond: 0,
+          firstTokenLatency: null,
+          generationStartTime: null,
+          lastTokenTime: null,
+          generatedText: ''
+        });
+      }
+    };
+
+    // ============ ERROR HANDLER ============
+    class ErrorHandler {
+      static show(message, type = 'error', dismissible = true, duration = null) {
+        const container = document.getElementById('error-container');
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type}`;
+
+        const messageSpan = document.createElement('span');
+        messageSpan.textContent = message;
+        alert.appendChild(messageSpan);
+
+        if (dismissible) {
+          const closeBtn = document.createElement('button');
+          closeBtn.innerHTML = '&times;';
+          closeBtn.onclick = () => alert.remove();
+          alert.appendChild(closeBtn);
+        }
+
+        container.appendChild(alert);
+
+        if (duration || (type !== 'error' && duration !== 0)) {
+          setTimeout(() => alert.remove(), duration || 8000);
+        }
+      }
+
+      static showCorsHelp(runner) {
+        const hints = {
+          ollama: 'Execute Ollama com: OLLAMA_ORIGINS=* ollama serve',
+          lmstudio: 'Habilite "Allow Cross-Origin Requests" nas configuracoes do LM Studio',
+          llamacpp: 'Execute com: ./server --cors-allowed-origins "*"'
+        };
+        this.show(`CORS bloqueado. ${hints[runner] || 'Habilite CORS no seu servidor LLM.'}`, 'warning', true, 15000);
+      }
+
+      static clear() {
+        document.getElementById('error-container').innerHTML = '';
+      }
+    }
+
+    // ============ LOGGER ============
+    class Logger {
+      static log(message, type = 'info') {
+        const logEl = document.getElementById('event-log');
+        const time = new Date().toLocaleTimeString();
+        const entry = document.createElement('div');
+        entry.className = 'log-entry';
+        entry.innerHTML = `<span class="log-time">[${time}]</span> <span class="log-type-${type}">${message}</span>`;
+        logEl.appendChild(entry);
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      static info(msg) { this.log(msg, 'info'); }
+      static success(msg) { this.log(msg, 'success'); }
+      static warning(msg) { this.log(msg, 'warning'); }
+      static error(msg) { this.log(msg, 'error'); }
+    }
+
+    // ============ RUNNER ABSTRACTION ============
+    class BaseRunner {
+      constructor(baseUrl, model) {
+        this.baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash
+        this.model = model;
+      }
+
+      async test() {
+        throw new Error('Not implemented');
+      }
+
+      async generate(prompt, options, onToken) {
+        throw new Error('Not implemented');
+      }
+    }
+
+    class OllamaRunner extends BaseRunner {
+      async test() {
+        try {
+          const response = await fetch(`${this.baseUrl}/api/tags`);
+          if (!response.ok) {
+            throw new Error(`Ollama retornou status ${response.status}`);
+          }
+          const data = await response.json();
+          Logger.success(`Ollama conectado. Modelos: ${data.models?.map(m => m.name).join(', ') || 'nenhum'}`);
+          return true;
+        } catch (error) {
+          if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+            ErrorHandler.showCorsHelp('ollama');
+            throw new Error(`Nao foi possivel conectar ao Ollama em ${this.baseUrl}. Verifique se esta rodando e CORS esta habilitado.`);
+          }
+          throw error;
+        }
+      }
+
+      async generate(prompt, options, onToken) {
+        const response = await fetch(`${this.baseUrl}/api/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: this.model,
+            prompt,
+            stream: true,
+            options: {
+              num_predict: options.maxTokens || 400,
+              temperature: options.temperature || 0.8,
+              seed: options.seed
+            }
+          })
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Ollama API error: ${response.status} - ${errorText}`);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (!line.trim()) continue;
+
+            try {
+              const data = JSON.parse(line);
+              if (data.response) {
+                onToken(data.response);
+              }
+              if (data.done) {
+                return;
+              }
+            } catch (err) {
+              console.warn('Failed to parse Ollama response:', line);
+            }
+          }
+        }
+      }
+    }
+
+    class LMStudioRunner extends BaseRunner {
+      async test() {
+        try {
+          const response = await fetch(`${this.baseUrl}/v1/models`);
+          if (!response.ok) {
+            throw new Error(`LM Studio retornou status ${response.status}`);
+          }
+          const data = await response.json();
+          const models = data.data?.map(m => m.id).join(', ') || 'nenhum';
+          Logger.success(`LM Studio conectado. Modelos: ${models}`);
+          return true;
+        } catch (error) {
+          if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+            ErrorHandler.showCorsHelp('lmstudio');
+            throw new Error(`Nao foi possivel conectar ao LM Studio em ${this.baseUrl}. Verifique se esta rodando.`);
+          }
+          throw error;
+        }
+      }
+
+      async generate(prompt, options, onToken) {
+        const response = await fetch(`${this.baseUrl}/v1/completions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: this.model,
+            prompt,
+            max_tokens: options.maxTokens || 400,
+            temperature: options.temperature || 0.8,
+            seed: options.seed,
+            stream: true
+          })
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`LM Studio API error: ${response.status} - ${errorText}`);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || !trimmed.startsWith('data: ')) continue;
+
+            const data = trimmed.slice(6); // Remove 'data: ' prefix
+            if (data === '[DONE]') return;
+
+            try {
+              const parsed = JSON.parse(data);
+              const token = parsed.choices?.[0]?.text;
+              if (token) {
+                onToken(token);
+              }
+            } catch (err) {
+              console.warn('Failed to parse LM Studio SSE:', line);
+            }
+          }
+        }
+      }
+    }
+
+    class LlamaCppRunner extends BaseRunner {
+      async test() {
+        try {
+          const response = await fetch(`${this.baseUrl}/health`);
+          if (!response.ok) {
+            throw new Error(`llama.cpp retornou status ${response.status}`);
+          }
+          Logger.success(`llama.cpp server conectado.`);
+          return true;
+        } catch (error) {
+          if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+            ErrorHandler.showCorsHelp('llamacpp');
+            throw new Error(`Nao foi possivel conectar ao llama.cpp em ${this.baseUrl}. Verifique se esta rodando.`);
+          }
+          throw error;
+        }
+      }
+
+      async generate(prompt, options, onToken) {
+        // llama.cpp uses similar SSE format to LM Studio
+        const response = await fetch(`${this.baseUrl}/completion`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt,
+            n_predict: options.maxTokens || 400,
+            temperature: options.temperature || 0.8,
+            seed: options.seed || -1,
+            stream: true
+          })
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`llama.cpp API error: ${response.status} - ${errorText}`);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || !trimmed.startsWith('data: ')) continue;
+
+            const data = trimmed.slice(6);
+            if (data === '[DONE]') return;
+
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.content) {
+                onToken(parsed.content);
+              }
+              if (parsed.stop) {
+                return;
+              }
+            } catch (err) {
+              console.warn('Failed to parse llama.cpp response:', line);
+            }
+          }
+        }
+      }
+    }
+
+    // ============ RUNNER FACTORY ============
+    function createRunner(type, url, model) {
+      switch (type) {
+        case 'ollama':
+          return new OllamaRunner(url, model);
+        case 'lmstudio':
+          return new LMStudioRunner(url, model);
+        case 'llamacpp':
+          return new LlamaCppRunner(url, model);
+        default:
+          throw new Error(`Runner desconhecido: ${type}`);
+      }
+    }
+
+    // ============ WEBSOCKET CLIENT ============
+    class ArenaClient {
+      constructor() {
+        this.ws = null;
+        this.reconnectAttempts = 0;
+        this.shouldReconnect = true;
+        this.onChallenge = null;
+        this.onRegistered = null;
+        this.onError = null;
+        this.onClose = null;
+      }
+
+      connect(url) {
+        return new Promise((resolve, reject) => {
+          this.shouldReconnect = true;
+
+          try {
+            this.ws = new WebSocket(url);
+          } catch (error) {
+            reject(new Error(`URL WebSocket invalida: ${url}`));
+            return;
+          }
+
+          const timeout = setTimeout(() => {
+            reject(new Error('Timeout ao conectar ao servidor'));
+            this.ws?.close();
+          }, 10000);
+
+          this.ws.onopen = () => {
+            clearTimeout(timeout);
+            this.reconnectAttempts = 0;
+            Logger.success('WebSocket conectado');
+            resolve();
+          };
+
+          this.ws.onmessage = (event) => {
+            try {
+              const message = JSON.parse(event.data);
+              this.handleMessage(message);
+            } catch (err) {
+              Logger.error(`Erro ao parsear mensagem: ${err.message}`);
+            }
+          };
+
+          this.ws.onclose = (event) => {
+            Logger.warning(`WebSocket fechado: ${event.code}`);
+            if (this.onClose) this.onClose();
+            if (this.shouldReconnect) {
+              this.attemptReconnect(url);
+            }
+          };
+
+          this.ws.onerror = (error) => {
+            clearTimeout(timeout);
+            Logger.error('Erro no WebSocket');
+            reject(new Error('Erro ao conectar ao servidor Arena'));
+          };
+        });
+      }
+
+      handleMessage(message) {
+        Logger.info(`Recebido: ${message.type}`);
+
+        switch (message.type) {
+          case 'registered':
+            AppState.update({ sessionId: message.session_id });
+            if (this.onRegistered) this.onRegistered(message);
+            break;
+
+          case 'challenge':
+            if (this.onChallenge) this.onChallenge(message);
+            break;
+
+          case 'heartbeat':
+            // Keep-alive, no action needed
+            break;
+
+          case 'error':
+            Logger.error(`Erro do servidor: ${message.message}`);
+            if (this.onError) this.onError(message);
+            break;
+
+          default:
+            Logger.warning(`Tipo de mensagem desconhecido: ${message.type}`);
+        }
+      }
+
+      sendRegister() {
+        this.send({
+          type: 'register',
+          participant_id: AppState.participantId,
+          nickname: AppState.nickname,
+          pin: AppState.pin,
+          runner: AppState.runner,
+          model: AppState.model
+        });
+        Logger.info('Enviado: register');
+      }
+
+      sendToken(round, seq, content) {
+        this.send({
+          type: 'token',
+          round,
+          participant_id: AppState.participantId,
+          seq,
+          content
+        });
+      }
+
+      sendComplete(round, tokens, latencyMs, durationMs) {
+        this.send({
+          type: 'complete',
+          round,
+          participant_id: AppState.participantId,
+          tokens,
+          latency_ms_first_token: latencyMs,
+          duration_ms: durationMs,
+          model_info: {
+            name: AppState.model,
+            runner: AppState.runner,
+            device: 'browser'
+          }
+        });
+        Logger.info(`Enviado: complete (${tokens} tokens, ${durationMs}ms)`);
+      }
+
+      sendError(round, code, message) {
+        this.send({
+          type: 'error',
+          round,
+          participant_id: AppState.participantId,
+          code,
+          message
+        });
+        Logger.error(`Enviado erro: ${code} - ${message}`);
+      }
+
+      send(data) {
+        if (this.ws?.readyState === WebSocket.OPEN) {
+          this.ws.send(JSON.stringify(data));
+        } else {
+          Logger.warning('WebSocket nao esta aberto, mensagem descartada');
+        }
+      }
+
+      attemptReconnect(url) {
+        if (this.reconnectAttempts >= CONFIG.RECONNECT_MAX_ATTEMPTS) {
+          Logger.error('Maximo de tentativas de reconexao atingido');
+          AppState.update({ connectionStatus: 'error' });
+          return;
+        }
+
+        this.reconnectAttempts++;
+        const delay = CONFIG.RECONNECT_BASE_DELAY * Math.pow(2, this.reconnectAttempts - 1);
+
+        Logger.warning(`Reconectando em ${delay}ms (tentativa ${this.reconnectAttempts}/${CONFIG.RECONNECT_MAX_ATTEMPTS})`);
+
+        setTimeout(() => {
+          if (this.shouldReconnect) {
+            this.connect(url)
+              .then(() => {
+                this.sendRegister();
+              })
+              .catch(err => {
+                Logger.error(`Reconexao falhou: ${err.message}`);
+              });
+          }
+        }, delay);
+      }
+
+      disconnect() {
+        this.shouldReconnect = false;
+        if (this.ws) {
+          this.ws.close();
+          this.ws = null;
+        }
+        Logger.info('Desconectado');
+      }
+    }
+
+    // ============ UI CONTROLLER ============
+    class UIController {
+      static init() {
+        // Bind form inputs to state
+        const inputs = {
+          'server-url': 'serverUrl',
+          'pin': 'pin',
+          'participant-id': 'participantId',
+          'nickname': 'nickname',
+          'runner': 'runner',
+          'llm-url': 'llmUrl',
+          'model': 'model'
+        };
+
+        Object.entries(inputs).forEach(([id, stateKey]) => {
+          const el = document.getElementById(id);
+          if (el) {
+            // Load initial value
+            el.value = AppState[stateKey] || '';
+
+            // Save on change
+            el.addEventListener('input', () => {
+              AppState[stateKey] = el.value;
+              AppState.save();
+            });
+
+            el.addEventListener('change', () => {
+              AppState[stateKey] = el.value;
+              AppState.save();
+            });
+          }
+        });
+
+        // Runner change updates LLM URL
+        document.getElementById('runner').addEventListener('change', (e) => {
+          const runner = e.target.value;
+          const config = CONFIG.RUNNERS[runner];
+          if (config) {
+            document.getElementById('llm-url').value = config.defaultUrl;
+            AppState.llmUrl = config.defaultUrl;
+            AppState.save();
+          }
+        });
+
+        // Subscribe to state changes
+        AppState.subscribe(this.handleStateChange.bind(this));
+      }
+
+      static handleStateChange(changes) {
+        if ('connectionStatus' in changes) {
+          this.updateConnectionStatus(changes.connectionStatus);
+        }
+
+        if ('tokenCount' in changes || 'tokensPerSecond' in changes ||
+            'firstTokenLatency' in changes || 'generationStartTime' in changes) {
+          this.updateMetrics();
+        }
+
+        if ('currentRound' in changes || 'prompt' in changes) {
+          this.updateRoundInfo();
+        }
+      }
+
+      static updateConnectionStatus(status) {
+        const badge = document.getElementById('connection-status');
+        const btnConnect = document.getElementById('btn-connect');
+        const btnDisconnect = document.getElementById('btn-disconnect');
+        const statusPanel = document.getElementById('status-panel');
+        const outputPanel = document.getElementById('output-panel');
+
+        // Remove all status classes
+        badge.className = 'status-badge';
+
+        const statusMap = {
+          disconnected: { text: 'Desconectado', class: 'status-disconnected' },
+          connecting: { text: 'Conectando...', class: 'status-connecting' },
+          connected: { text: 'Conectado', class: 'status-connected' },
+          generating: { text: 'Gerando...', class: 'status-generating' },
+          error: { text: 'Erro', class: 'status-error' }
+        };
+
+        const config = statusMap[status] || statusMap.disconnected;
+        badge.textContent = config.text;
+        badge.classList.add(config.class);
+
+        // Toggle buttons
+        const isConnected = ['connected', 'generating'].includes(status);
+        btnConnect.classList.toggle('hidden', isConnected);
+        btnDisconnect.classList.toggle('hidden', !isConnected);
+        btnConnect.disabled = status === 'connecting';
+
+        // Show/hide panels
+        statusPanel.classList.toggle('visible', isConnected);
+        outputPanel.classList.toggle('visible', isConnected);
+      }
+
+      static updateMetrics() {
+        document.getElementById('token-count').textContent = AppState.tokenCount;
+        document.getElementById('output-token-count').textContent = AppState.tokenCount;
+        document.getElementById('tokens-per-sec').textContent = AppState.tokensPerSecond.toFixed(1);
+
+        if (AppState.firstTokenLatency !== null) {
+          document.getElementById('first-token-time').textContent = AppState.firstTokenLatency;
+        }
+
+        if (AppState.generationStartTime) {
+          const duration = (Date.now() - AppState.generationStartTime) / 1000;
+          document.getElementById('duration').textContent = duration.toFixed(1);
+        }
+      }
+
+      static updateRoundInfo() {
+        const roundInfo = document.getElementById('round-info');
+
+        if (AppState.currentRound !== null) {
+          roundInfo.classList.add('visible');
+          document.getElementById('round-number').textContent = AppState.currentRound;
+          document.getElementById('current-prompt').textContent = AppState.prompt;
+        } else {
+          roundInfo.classList.remove('visible');
+        }
+      }
+
+      static appendToken(token) {
+        const stream = document.getElementById('token-stream');
+        stream.textContent += token;
+        stream.scrollTop = stream.scrollHeight;
+      }
+
+      static clearOutput() {
+        document.getElementById('token-stream').textContent = '';
+      }
+
+      static disableForm(disabled) {
+        const form = document.getElementById('config-panel');
+        const inputs = form.querySelectorAll('input, select');
+        inputs.forEach(input => input.disabled = disabled);
+      }
+    }
+
+    // ============ MAIN APPLICATION ============
+    class App {
+      constructor() {
+        this.client = new ArenaClient();
+        this.runner = null;
+        this.isGenerating = false;
+      }
+
+      init() {
+        // Load saved config
+        AppState.load();
+
+        // Initialize UI
+        UIController.init();
+
+        // Set up client callbacks
+        this.client.onRegistered = (msg) => {
+          AppState.update({ connectionStatus: 'connected' });
+          ErrorHandler.show('Registrado com sucesso!', 'success', true, 3000);
+        };
+
+        this.client.onChallenge = (challenge) => {
+          this.handleChallenge(challenge);
+        };
+
+        this.client.onError = (msg) => {
+          if (msg.message?.includes('PIN')) {
+            ErrorHandler.show('PIN invalido. Verifique com o organizador.', 'error');
+            this.disconnect();
+          } else {
+            ErrorHandler.show(msg.message || 'Erro desconhecido', 'error');
+          }
+        };
+
+        this.client.onClose = () => {
+          if (AppState.connectionStatus !== 'disconnected') {
+            AppState.update({ connectionStatus: 'connecting' });
+          }
+        };
+
+        // Bind button events
+        document.getElementById('btn-connect').addEventListener('click', () => this.connect());
+        document.getElementById('btn-disconnect').addEventListener('click', () => this.disconnect());
+        document.getElementById('btn-test-llm').addEventListener('click', () => this.testLLM());
+
+        Logger.info('Aplicacao inicializada');
+      }
+
+      async testLLM() {
+        const btn = document.getElementById('btn-test-llm');
+        btn.disabled = true;
+        btn.textContent = 'Testando...';
+
+        try {
+          const runner = createRunner(AppState.runner, AppState.llmUrl, AppState.model);
+          await runner.test();
+          ErrorHandler.show('LLM conectado com sucesso!', 'success', true, 3000);
+        } catch (error) {
+          ErrorHandler.show(error.message, 'error');
+          Logger.error(error.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Testar LLM';
+        }
+      }
+
+      async connect() {
+        // Validate inputs
+        if (!AppState.pin) {
+          ErrorHandler.show('PIN e obrigatorio', 'error');
+          return;
+        }
+        if (!AppState.participantId) {
+          ErrorHandler.show('ID do participante e obrigatorio', 'error');
+          return;
+        }
+        if (!AppState.nickname) {
+          ErrorHandler.show('Apelido e obrigatorio', 'error');
+          return;
+        }
+
+        AppState.update({ connectionStatus: 'connecting' });
+        UIController.disableForm(true);
+
+        try {
+          // First, test LLM connection
+          Logger.info(`Testando conexao com ${AppState.runner}...`);
+          this.runner = createRunner(AppState.runner, AppState.llmUrl, AppState.model);
+          await this.runner.test();
+
+          // Then connect to Arena server
+          Logger.info(`Conectando ao servidor Arena...`);
+          await this.client.connect(AppState.serverUrl);
+
+          // Send registration
+          this.client.sendRegister();
+
+        } catch (error) {
+          AppState.update({ connectionStatus: 'error' });
+          UIController.disableForm(false);
+          ErrorHandler.show(error.message, 'error');
+          Logger.error(error.message);
+        }
+      }
+
+      disconnect() {
+        this.client.disconnect();
+        AppState.update({ connectionStatus: 'disconnected' });
+        AppState.reset();
+        UIController.disableForm(false);
+        UIController.clearOutput();
+      }
+
+      async handleChallenge(challenge) {
+        if (this.isGenerating) {
+          Logger.warning('Ja esta gerando, ignorando novo desafio');
+          return;
+        }
+
+        Logger.info(`Desafio recebido: Round ${challenge.round}`);
+
+        // Update state
+        AppState.update({
+          connectionStatus: 'generating',
+          currentRound: challenge.round,
+          prompt: challenge.prompt,
+          maxTokens: challenge.max_tokens,
+          temperature: challenge.temperature,
+          deadlineMs: challenge.deadline_ms,
+          seed: challenge.seed,
+          tokenCount: 0,
+          tokensPerSecond: 0,
+          firstTokenLatency: null,
+          generationStartTime: Date.now(),
+          generatedText: ''
+        });
+
+        UIController.clearOutput();
+        this.isGenerating = true;
+
+        let seq = 0;
+        let firstTokenTime = null;
+        const startTime = Date.now();
+
+        // Set up deadline timeout
+        const deadlineTimeout = setTimeout(() => {
+          if (this.isGenerating) {
+            Logger.warning('Deadline atingido, parando geracao');
+            this.isGenerating = false;
+          }
+        }, challenge.deadline_ms);
+
+        try {
+          await this.runner.generate(
+            challenge.prompt,
+            {
+              maxTokens: challenge.max_tokens,
+              temperature: challenge.temperature,
+              seed: challenge.seed
+            },
+            (token) => {
+              if (!this.isGenerating) return;
+
+              const now = Date.now();
+
+              // Track first token latency
+              if (firstTokenTime === null) {
+                firstTokenTime = now;
+                const latency = now - startTime;
+                AppState.update({ firstTokenLatency: latency });
+                Logger.info(`Primeiro token em ${latency}ms`);
+              }
+
+              // Send token to server
+              this.client.sendToken(challenge.round, seq, token);
+              seq++;
+
+              // Update state
+              const duration = (now - startTime) / 1000;
+              const tps = seq / duration;
+
+              AppState.update({
+                tokenCount: seq,
+                tokensPerSecond: tps,
+                generatedText: AppState.generatedText + token
+              });
+
+              UIController.appendToken(token);
+            }
+          );
+
+          clearTimeout(deadlineTimeout);
+
+          // Send completion
+          const durationMs = Date.now() - startTime;
+          const latencyMs = firstTokenTime ? firstTokenTime - startTime : null;
+
+          this.client.sendComplete(challenge.round, seq, latencyMs, durationMs);
+
+          AppState.update({ connectionStatus: 'connected' });
+          ErrorHandler.show(`Geracao completa: ${seq} tokens em ${(durationMs / 1000).toFixed(1)}s`, 'success', true, 5000);
+
+        } catch (error) {
+          clearTimeout(deadlineTimeout);
+          Logger.error(`Erro na geracao: ${error.message}`);
+          this.client.sendError(challenge.round, 'GENERATION_FAILED', error.message);
+          ErrorHandler.show(`Erro na geracao: ${error.message}`, 'error');
+          AppState.update({ connectionStatus: 'connected' });
+        } finally {
+          this.isGenerating = false;
+        }
+      }
+    }
+
+    // ============ INITIALIZATION ============
+    document.addEventListener('DOMContentLoaded', () => {
+      window.app = new App();
+      window.app.init();
+    });
+
+    // Debug helpers
+    window.DEBUG = {
+      getState: () => ({ ...AppState }),
+      testRunner: async () => {
+        const runner = createRunner(AppState.runner, AppState.llmUrl, AppState.model);
+        await runner.test();
+        console.log('Runner OK');
+      }
+    };
+  </script>
+</body>
+</html>
