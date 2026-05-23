@@ -452,6 +452,92 @@
     .log-type-warning { color: var(--accent-warning); }
     .log-type-error { color: var(--accent-error); }
 
+    /* ============ SANDBOX PANEL ============ */
+    #sandbox-panel {
+      display: none;
+    }
+
+    #sandbox-panel.visible {
+      display: block;
+    }
+
+    .sandbox-header {
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .sandbox-header h2 {
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .sandbox-header h2 span {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .sandbox-input-row {
+      display: flex;
+      gap: 0.75rem;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .sandbox-input-row input {
+      flex: 1;
+    }
+
+    .sandbox-input-row button {
+      white-space: nowrap;
+    }
+
+    #sandbox-stream {
+      padding: 1.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.9375rem;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 120px;
+      max-height: 300px;
+      overflow-y: auto;
+      background: var(--bg-primary);
+      border-left: 3px solid var(--accent-warning);
+    }
+
+    #sandbox-stream:empty::before {
+      content: 'Digite um prompt e clique em Enviar Teste...';
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .sandbox-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 0.75rem;
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .sandbox-metrics .status-item {
+      padding: 0.5rem;
+    }
+
+    .sandbox-metrics .status-item .value {
+      font-size: 1.125rem;
+      color: var(--accent-warning);
+    }
+
+    .sandbox-metrics .status-item .label {
+      font-size: 0.6875rem;
+    }
+
     /* ============ UTILITIES ============ */
     .hidden {
       display: none !important;
