@@ -661,6 +661,39 @@
       <div id="token-stream"></div>
     </section>
 
+    <section id="sandbox-panel">
+      <div class="sandbox-header">
+        <h2>Sandbox <span>(teste local)</span></h2>
+        <button id="btn-sandbox-clear" class="btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Limpar</button>
+      </div>
+
+      <div class="sandbox-input-row">
+        <input type="text" id="sandbox-prompt" placeholder="Digite um prompt para testar...">
+        <button id="btn-sandbox-send" class="btn-primary">Enviar Teste</button>
+      </div>
+
+      <div id="sandbox-stream"></div>
+
+      <div class="sandbox-metrics">
+        <div class="status-item">
+          <div class="value" id="sandbox-token-count">0</div>
+          <div class="label">Tokens</div>
+        </div>
+        <div class="status-item">
+          <div class="value" id="sandbox-tps">0.0</div>
+          <div class="label">Tokens/s</div>
+        </div>
+        <div class="status-item">
+          <div class="value" id="sandbox-ttft">-</div>
+          <div class="label">TTFT (ms)</div>
+        </div>
+        <div class="status-item">
+          <div class="value" id="sandbox-duration">0.0</div>
+          <div class="label">Duracao (s)</div>
+        </div>
+      </div>
+    </section>
+
     <details id="log-panel">
       <summary>Log de Eventos</summary>
       <pre id="event-log"></pre>
