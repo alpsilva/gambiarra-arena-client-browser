@@ -1368,6 +1368,7 @@
         const btnDisconnect = document.getElementById('btn-disconnect');
         const statusPanel = document.getElementById('status-panel');
         const outputPanel = document.getElementById('output-panel');
+        const sandboxPanel = document.getElementById('sandbox-panel');
 
         // Remove all status classes
         badge.className = 'status-badge';
@@ -1393,6 +1394,18 @@
         // Show/hide panels
         statusPanel.classList.toggle('visible', isConnected);
         outputPanel.classList.toggle('visible', isConnected);
+
+        // Show sandbox only when connected, disable input during official generation
+        sandboxPanel.classList.toggle('visible', isConnected);
+        const sandboxInput = document.getElementById('sandbox-prompt');
+        const sandboxBtn = document.getElementById('btn-sandbox-send');
+        const isOfficialGenerating = status === 'generating';
+        sandboxInput.disabled = isOfficialGenerating;
+        if (isOfficialGenerating) {
+          sandboxBtn.disabled = true;
+        } else {
+          sandboxBtn.disabled = false;
+        }
       }
 
       static updateMetrics() {
@@ -1445,6 +1458,7 @@
         this.client = new ArenaClient();
         this.runner = null;
         this.isGenerating = false;
+        this.isTestGenerating = false;
       }
 
       init() {
@@ -1483,6 +1497,18 @@
         document.getElementById('btn-connect').addEventListener('click', () => this.connect());
         document.getElementById('btn-disconnect').addEventListener('click', () => this.disconnect());
         document.getElementById('btn-test-llm').addEventListener('click', () => this.testLLM());
+
+        document.getElementById('btn-sandbox-send').addEventListener('click', () => this.testGenerate());
+        document.getElementById('sandbox-prompt').addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) this.testGenerate();
+        });
+        document.getElementById('btn-sandbox-clear').addEventListener('click', () => {
+          document.getElementById('sandbox-stream').textContent = '';
+          document.getElementById('sandbox-token-count').textContent = '0';
+          document.getElementById('sandbox-tps').textContent = '0.0';
+          document.getElementById('sandbox-ttft').textContent = '-';
+          document.getElementById('sandbox-duration').textContent = '0.0';
+        });
 
         Logger.info('Aplicacao inicializada');
       }
@@ -1552,7 +1578,79 @@
         UIController.clearOutput();
       }
 
+      cancelTest() {
+        this.isTestGenerating = false;
+      }
+
+      async testGenerate() {
+        const promptInput = document.getElementById('sandbox-prompt');
+        const prompt = promptInput.value.trim();
+        if (!prompt) return;
+
+        if (!this.runner) {
+          ErrorHandler.show('LLM nao configurado. Conecte primeiro.', 'error');
+          return;
+        }
+
+        if (this.isTestGenerating) {
+          this.cancelTest();
+          return;
+        }
+
+        this.isTestGenerating = true;
+        const btn = document.getElementById('btn-sandbox-send');
+        const stream = document.getElementById('sandbox-stream');
+        btn.textContent = 'Parar';
+        btn.className = 'btn-danger';
+        stream.textContent = '';
+
+        let tokenCount = 0;
+        let firstTokenTime = null;
+        const startTime = Date.now();
+
+        Logger.info('[Sandbox] Gerando resposta...');
+
+        try {
+          await this.runner.generate(
+            prompt,
+            { maxTokens: 400, temperature: 0.8 },
+            (token) => {
+              if (!this.isTestGenerating) return;
+
+              const now = Date.now();
+
+              if (firstTokenTime === null) {
+                firstTokenTime = now;
+                document.getElementById('sandbox-ttft').textContent = now - startTime;
+              }
+
+              tokenCount++;
+              stream.textContent += token;
+              stream.scrollTop = stream.scrollHeight;
+
+              const duration = (now - startTime) / 1000;
+              document.getElementById('sandbox-token-count').textContent = tokenCount;
+              document.getElementById('sandbox-tps').textContent = (tokenCount / duration).toFixed(1);
+              document.getElementById('sandbox-duration').textContent = duration.toFixed(1);
+            }
+          );
+
+          Logger.success(`[Sandbox] Completo: ${tokenCount} tokens`);
+        } catch (error) {
+          if (this.isTestGenerating) {
+            Logger.error(`[Sandbox] Erro: ${error.message}`);
+            ErrorHandler.show(`Erro no sandbox: ${error.message}`, 'error');
+          }
+        } finally {
+          this.isTestGenerating = false;
+          btn.textContent = 'Enviar Teste';
+          btn.className = 'btn-primary';
+        }
+      }
+
       async handleChallenge(challenge) {
+        this.cancelTest();
+
         if (this.isGenerating) {
           Logger.warning('Ja esta gerando, ignorando novo desafio');
           return;
