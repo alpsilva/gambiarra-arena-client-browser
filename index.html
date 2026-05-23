@@ -517,6 +517,18 @@
       font-style: italic;
     }
 
+    #sandbox-stream.generating:empty::before {
+      content: 'Gerando resposta...';
+      color: var(--accent-warning);
+      font-style: normal;
+      animation: sandbox-pulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes sandbox-pulse {
+      0%, 100% { opacity: 0.35; }
+      50% { opacity: 1; }
+    }
+
     .sandbox-metrics {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
@@ -1603,6 +1615,7 @@
         btn.textContent = 'Parar';
         btn.className = 'btn-danger';
         stream.textContent = '';
+        stream.classList.add('generating');
 
         let tokenCount = 0;
         let firstTokenTime = null;
@@ -1645,6 +1658,7 @@
           this.isTestGenerating = false;
           btn.textContent = 'Enviar Teste';
           btn.className = 'btn-primary';
+          stream.classList.remove('generating');
         }
       }
 
